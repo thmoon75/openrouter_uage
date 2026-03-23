@@ -549,6 +549,7 @@
           return;
         }
 
+        sessionStorage.setItem("or_key", key);
         const userData = await resp.json();
         showDashboard(userData);
       } catch (e) {
@@ -613,6 +614,7 @@
     }
 
     function handleLogout() {
+      sessionStorage.removeItem("or_key");
       document.getElementById("dashboard").style.display = "none";
       document.getElementById("loginScreen").style.display = "flex";
       document.getElementById("apiKeyInput").value = "";
@@ -623,6 +625,27 @@
       filteredData = [];
       if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     }
+
+    // Auto-restore session on page load
+    (async () => {
+      const saved = sessionStorage.getItem("or_key");
+      if (!saved) return;
+      try {
+        const resp = await fetch("/api/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ apiKey: saved }),
+        });
+        if (resp.ok) {
+          const userData = await resp.json();
+          showDashboard(userData);
+        } else {
+          sessionStorage.removeItem("or_key");
+        }
+      } catch (e) {
+        sessionStorage.removeItem("or_key");
+      }
+    })();
 
     // ── Filters ──
     function populateModelFilter() {
